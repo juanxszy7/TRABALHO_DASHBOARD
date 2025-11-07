@@ -1,139 +1,160 @@
 <template>
-  
-  <div>
+  <div class="container">
+    <div class="card">
+      <h2>Cadastro</h2>
 
-    <div class="container">
+      <form @submit.prevent="cadastrar">
+        <div class="input-group">
+          <label for="nome">Nome *</label>
+          <input type="text" id="nome" v-model="nome"  />
+        </div>
 
-      <div>
+        <div class="input-group">
+          <label for="email">Email *</label>
+          <input type="email" id="email" v-model="email"  />
+        </div>
 
-        <form action="" class="formulario">
+        <div class="input-group">
+          <label for="senha">Senha *</label>
+          <input type="password" id="senha" v-model="senha"  />
+        </div>
 
-          <div class="tituloForm">
-            <h1>Cadastre-se</h1>
-          </div>
-
-          <div class="camposForm">
-            <label for="nome">Nome:</label>
-            <input type="text" name="nome">
-          </div>
-
-          <div class="camposForm">
-            <label for="email">Email:</label>
-            <input type="email" name="email">
-          </div>
-
-          <div class="camposForm">
-            <label for="senha">Senha:</label>
-            <input type="password" name="senha">
-          </div>
-          
-          <div class="camposForm">
-            <button type="submit">Cadastrar</button>
-          </div>
-
-        </form>
-
-      </div>
-
+        <button type="submit" class="btn">
+          Cadastrar
+        </button>
+        <small class="mensagem">{{ mensagem }}</small>
+      </form>
     </div>
-
   </div>
-
 </template>
 
 <script>
-export default{
-  name:'PaginaCadastro'
-}
+import api from '@/service/api';
+
+export default {
+  name: "Cadastro",
+  data() {
+    return {
+      nome: "",
+      email: "",
+      senha: "",
+      mensagem: ""
+    };
+  },
+  methods: {
+    async cadastrar() {
+    
+        try {
+
+            const novoUsuario = {
+              nome: this.nome,
+              email: this.email,
+              senha: this.senha
+            }
+        
+            const res = await api.post('/cadastro', novoUsuario)
+        
+
+            if (res) {
+                this.mensagem = "Usuario cadastrado com sucesso"
+
+                this.nome = "";
+                this.email = "";
+                this.senha = "";
+
+            }
+            
+            return this.mensagem
+            
+
+        } catch (error) {
+            
+            this.mensagem = "Erro ao cadastrar usuario"
+
+            return this.mensagem
+
+        }
+    
+    },
+  },
+};
 </script>
 
-<style>
-
-/* Fundo da página */
-body {
-  min-height: 100vh;
+<style scoped>
+/* Fundo geral */
+.container {
+  height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+  background: #0f172a;
+  font-family: "Roboto", sans-serif;
 }
 
-/* Container principal */
-.container {
-  background: #ffffff;
-  width: 420px;
-  padding: 30px;
+/* Card */
+.card {
+  background: #1e293b;
+  padding: 40px 50px;
   border-radius: 12px;
-  box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-  animation: fadeIn .5s ease-in-out;
-}
-
-/* Formulário */
-.formulario {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.tituloForm{
+  width: 350px;
+  box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.4);
+  color: #fff;
   text-align: center;
 }
 
-.camposForm {
-  display: flex;
-  flex-direction: column;
-}
-
-.camposForm label {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 6px;
+.card h2 {
+  margin-bottom: 25px;
   font-weight: 600;
+  color: #60a5fa;
 }
 
-.camposForm input {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid #bdbdbd;
-  font-size: 15px;
+/* Inputs */
+.input-group {
+  width: 100%;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  font-size: 14px;
+  color: #cbd5e1;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  background: #334155;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  outline: none;
   transition: 0.3s;
 }
 
-.camposForm input:focus {
-  border-color: #3a7bd5;
-  outline: none;
-  box-shadow: 0 0 5px rgba(58, 123, 213, 0.4);
+.input-group input:focus {
+  background: #475569;
+  box-shadow: 0 0 5px #3b82f6;
 }
 
-/* Botão de enviar */
-button {
+/* Botão */
+.btn {
   width: 100%;
-  padding: 14px;
-  background-color: #3a7bd5;
-  color: #ffffff;
+  padding: 12px;
+  background: #3b82f6;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 16px;
-  font-weight: bold;
+  color: #fff;
   cursor: pointer;
   transition: 0.3s;
-  margin-top: 10px;
 }
 
-button:hover {
-  background-color: #2a5fa0;
+.btn:hover {
+  background: #2563eb;
 }
 
-/* Animação */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+.mensagem{
+    margin-top: 10;
 }
-
-/* Responsividade */
-@media (max-width: 480px) {
-  .container {
-    width: 90%;
-  }
-}
-
 </style>
