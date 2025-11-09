@@ -3,6 +3,7 @@ const express = require('express')
 const cors = require('cors')
 const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
+const jwt = require('jsonwebtoken')
 
 //Inicialização
 const app = express()
@@ -19,15 +20,51 @@ mongoose.connect("mongodb://localhost:27017/dashboardMarketing", {
 
 //Modelo de usuario
 const UsuarioSchema = new mongoose.Schema({
-    nome: String,
-    email: String,
-    senha: String
-})
+  nome: {
+    type: String,
+    required: true
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  senha:{
+    type: String,
+    default: 123
+  },
+  admin: {
+    type: Boolean,
+    default: false
+  }
+});
 const Usuario = mongoose.model('Usuario', UsuarioSchema)
+
+
+//Modelo de Vendedores
+const VendedorSchema = new mongoose.Schema({
+  usuarioId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario',
+    required: true
+  },
+  nome: String,
+  email: String,
+  criadoEm: {
+    type: Date,
+    default: Date.now
+  }
+});
+const Vendedor = mongoose.model('Vendedor', VendedorSchema)
 
 
 //Modelo de vendas
 const VendaSchema = new mongoose.Schema({
+  cliente:{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Usuario',
+    required: true
+  },
   produto: {
     type: String,
     required: true
@@ -42,7 +79,11 @@ const VendaSchema = new mongoose.Schema({
   },
   vendedor: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Usuario',
+    ref: 'Vendedor',
+    required: true
+  },
+  pagMetodo:{
+    type: String,
     required: true
   }
 }, { timestamps: true });
@@ -50,14 +91,37 @@ const VendaSchema = new mongoose.Schema({
 const Venda = mongoose.model('Venda', VendaSchema);
 
 
-// ------------------------------------------------------------ Rotas Usuario ------------------------------------------------------
+// ----------------------------------------------------------- Rota Vendedor --------------------------------------------------------
+app.get('/vendedores', async (req, res) => {
+
+  try {
+
+    const usuarios = await Vendedor.find();
+    res.json(usuarios)
+
+  } catch (err) {
+
+      console.error("❌ Erro ao buscar vendedores:", err)
+      res.status(500).json({ message: "Erro no servidor ao buscar vendedores" })
+  
+  }
+
+
+
+})
+
+
+
+
+
+// ------------------------------------------------------------ Rotas Clientes ------------------------------------------------------
 
 //Rota de cadastro
 app.post('/cadastro', async (req, res) => {
 
     try {
 
-        const { nome, email, senha } = req.body;
+        const { nome, email } = req.body;
 
         const UsuarioExistente = await Usuario.findOne({email})
 
@@ -65,12 +129,9 @@ app.post('/cadastro', async (req, res) => {
             return res.status(400).json({ message: "Usuário já cadastrado" })
         }
 
-        const senhaCriptografada = await bcrypt.hash(senha, 8)
-
         const novoUsuario = new Usuario({
             nome,
-            email,
-            senha: senhaCriptografada
+            email
         })
 
         await novoUsuario.save() 
@@ -85,13 +146,56 @@ app.post('/cadastro', async (req, res) => {
     
 });
 
+
+app.post('/login', async (req, res) => {
+
+  try {
+    
+    const { email, senha } = req.body
+
+    const usuarioExistente = await Usuario.findOne({ email })
+
+    if (!usuarioExistente) {
+      
+      return res.status(404).json({ message: "Usuario não encontrado" })
+
+    }
+
+    const senhaCorreta = await bcrypt.compare(senha, usuarioExistente.senha )
+
+    if (!senhaCorreta) {
+      
+      return res.status(401).json({ message: "Senha incorreta" })
+
+    }
+
+    const token = jwt.sign({ id: usuarioExistente._id }, "chaveSecreta")
+
+    res.status(200).json({
+      message: "Login realizado com sucesso!",
+      userId: usuarioExistente.id,
+      admin: usuarioExistente.admin,
+      nome: usuarioExistente.nome,
+      tokenLogin: token
+    })
+
+  } catch (err) {
+    
+    return res.status(500).json({message: "Erro ao fazer login"})
+
+  }
+
+});
+
+
+
 //Rota para listagem de usuarios
-app.get('/usuarios', async (req, res) => {
+app.get('/clientes', async (req, res) => {
     
     try {
-        
-        const usuarios = await Usuario.find();
-        res.json(usuarios)
+
+      const usuarios = await Usuario.find({admin: {$ne: true}});
+      res.json(usuarios)
 
     } catch (err) {
 
@@ -102,39 +206,87 @@ app.get('/usuarios', async (req, res) => {
 
 });
 
-//Rota de edição de usuarios
-app.put('/editarUsuarios/:id', async (req, res) => {
+//Puxar dados de um cliente expecifico
+app.get('/clientes/:id', async (req, res) => {
+    
+  const { id } = req.params;
+  console.log("🧩 ID recebido:", id);
 
-    try {
-        
-        const { id } = req.params
-        const { nome, email, senha } = req.body
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ mensagem: 'ID inválido' });
+  }
 
-        const atualizacoes = {};
-        if (nome) atualizacoes.nome = nome;
-        if (email) atualizacoes.email = email;
-        if (senha) atualizacoes.senha = senha;
+  try {
+    const usuario = await Usuario.findById(id).select('-senha');
+    if (!usuario) return res.status(404).json({ mensagem: 'Usuário não encontrado' });
+    res.json(usuario);
+  } catch (err) {
+    res.status(500).json({ mensagem: 'Erro ao buscar usuário', erro: err.message });
+  }
 
-        const usuarioAtualizado = await Usuario.findByIdAndUpdate(id, atualizacoes, {new: true})
-
-        if (!usuarioAtualizado) {
-            
-            return res.status(404).json({message: "Usuario não encontrado"})
-
-        }
-
-        return res.json({message: "Usuario atualizado com sucesso!", usuarioAtualizado})
-
-    } catch (err) {
-        
-        res.status(500).json({ error: "Erro ao atualizar o usuário." });
-
-    }
 
 });
 
+//Rota de edição de usuarios
+
+app.put('/editarUsuarios/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { nome, email, senha, admin } = req.body;
+
+    const atualizacoes = {};
+
+    if (nome) atualizacoes.nome = nome;
+    if (email) atualizacoes.email = email;
+    if (admin !== undefined) atualizacoes.admin = admin;
+
+    if (senha) {
+      const senhaCriptografada = await bcrypt.hash(senha, 8);
+      atualizacoes.senha = senhaCriptografada;
+    }
+
+    const usuarioAtualizado = await Usuario.findByIdAndUpdate(id, atualizacoes, { new: true });
+
+    if (!usuarioAtualizado) {
+      return res.status(404).json({ message: "Usuário não encontrado" });
+    }
+
+    // ⚡ SE o admin virar TRUE, cria ou atualiza o vendedor
+    if (usuarioAtualizado.admin === true) {
+      const vendedorExistente = await Vendedor.findOne({ usuarioId: id });
+
+      if (!vendedorExistente) {
+        await Vendedor.create({
+          usuarioId: id,
+          nome: usuarioAtualizado.nome,
+          email: usuarioAtualizado.email
+        });
+      } else {
+        // Atualiza nome/email caso mudem
+        await Vendedor.updateOne(
+          { usuarioId: id },
+          { nome: usuarioAtualizado.nome, email: usuarioAtualizado.email }
+        );
+      }
+    } else {
+      await Vendedor.deleteOne({ usuarioId: id });
+    }
+
+    res.json({
+      message: "Usuário atualizado com sucesso!",
+      usuarioAtualizado
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro ao atualizar o usuário." });
+  }
+});
+
+
+
 //Rota de deletar usuario
-app.delete('/usuarios/:id', async (req, res) => {
+app.delete('/clientes/:id', async (req, res) => {
     
     try {
         
@@ -161,12 +313,14 @@ app.delete('/usuarios/:id', async (req, res) => {
 //Cadastro de nova venda
 app.post('/novaVenda', async (req, res) => {
   try {
-    const { produto, valor, vendedor } = req.body;
+    const { cliente, produto, valor, vendedor, pagMetodo } = req.body;
 
     const novaVenda = new Venda({
+      cliente,
       produto,
       valor,
-      vendedor
+      vendedor,
+      pagMetodo
     });
 
     await novaVenda.save();
@@ -182,7 +336,8 @@ app.post('/novaVenda', async (req, res) => {
 app.get('/vendas', async (req, res) => {
   try {
     const vendas = await Venda.find()
-      .populate('vendedor', 'nome email');
+    .populate('vendedor', 'nome email')
+    .populate('cliente', 'nome email');
 
     res.json(vendas);
   } catch (err) {
@@ -191,23 +346,44 @@ app.get('/vendas', async (req, res) => {
   }
 });
 
+app.get('/vendas/:id', async (req, res) => {
+  
+  const { id } = req.params;
+  console.log("🧩 ID recebido:", id);
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ mensagem: 'ID inválido' });
+  }
+
+  try {
+    const venda = await Venda.findById(id);
+    if (!venda) return res.status(404).json({ mensagem: 'Venda não encontrado' });
+    res.json(venda);
+  } catch (err) {
+    res.status(500).json({ mensagem: 'Erro ao buscar venda', erro: err.message });
+  }
+
+});
+
 //Rota de edição de vendas
 app.put('/vendas/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { produto, valor, vendedor } = req.body;
+    const { cliente, produto, valor, vendedor } = req.body;
 
     const atualizacoes = {};
     if (produto) atualizacoes.produto = produto;
     if (valor !== undefined) atualizacoes.valor = valor;
     if (vendedor) atualizacoes.vendedor = vendedor;
+    if (cliente) atualizacoes.cliente = cliente
 
     const vendaAtualizada = await Venda.findByIdAndUpdate(id, atualizacoes, {
       new: true
     });
 
-    if (!vendaAtualizada)
+    if (!vendaAtualizada){
       return res.status(404).json({ message: "Venda não encontrada" });
+    }
 
     res.json({ message: "Venda atualizada com sucesso", vendaAtualizada });
 

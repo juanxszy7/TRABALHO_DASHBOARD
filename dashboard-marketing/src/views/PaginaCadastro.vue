@@ -25,6 +25,16 @@
         <small class="mensagem">{{ mensagem }}</small>
       </form>
     </div>
+
+    <Modal
+      :show="modalAberto"
+      titulo="Cadastro de Cliente"
+      mensagem="Cliente cadastrado com sucesso"
+      texto-confirmar="Ok"   
+    />
+
+
+
   </div>
 </template>
 
@@ -38,9 +48,10 @@ export default {
       nome: "",
       email: "",
       senha: "",
-      mensagem: ""
+      mensagem: "",
     };
   },
+  
   methods: {
     async cadastrar() {
     
@@ -56,12 +67,17 @@ export default {
         
 
             if (res) {
-                this.mensagem = "Usuario cadastrado com sucesso"
 
-                this.nome = "";
-                this.email = "";
-                this.senha = "";
+              this.mensagem = "Usuario cadastrado com sucesso"
 
+              this.nome = "";
+              this.email = "";
+              this.senha = "";
+              
+              
+              this.$router.push("/clientes");
+              
+            
             }
             
             return this.mensagem
