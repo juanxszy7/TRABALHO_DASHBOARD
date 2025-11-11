@@ -44,8 +44,8 @@
         <div class="botoes">
           <button class="btn atualizar" @click="carregarVendas">Atualizar Vendas</button>
           <button class="btn atualizar" @click="novaVenda">Cadastrar Venda</button>
-          <button class="btn atualizar" @click="">Lista de Clientes</button>
-          <button class="btn atualizar" @click="">Lista de Vendedores</button>
+          <button class="btn atualizar" @click="listaCLientes">Lista de Clientes</button>
+          <button class="btn atualizar" @click="listaVendedores">Lista de Vendedores</button>
         </div>
       </div>
     </div>
@@ -98,6 +98,18 @@
       novaVenda(){
 
         this.$router.push('/novaVenda')
+
+      },
+
+      listaCLientes(){
+
+        this.$router.push('/clientes')
+
+      },
+      
+      listaVendedores(){
+
+        this.$router.push('/vendedores')
 
       },
 

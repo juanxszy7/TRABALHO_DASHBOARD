@@ -19,6 +19,19 @@
           <input type="password" id="senha" v-model="senha"  />
         </div>
 
+        <div class="input-group">
+          <label for="senha">Origem *</label>
+          
+          <select v-model="origem">
+            <option disabled value="">Como conheceu a loja?</option>
+            <option>Instagram</option>
+            <option>Google</option>
+            <option>Facebook</option>
+            <option>Indicação</option>
+            <option>Outro</option>
+          </select>
+        </div>
+
         <button type="submit" class="btn">
           Cadastrar
         </button>
@@ -48,6 +61,7 @@ export default {
       nome: "",
       email: "",
       senha: "",
+      origem: "",
       mensagem: "",
     };
   },
@@ -60,7 +74,8 @@ export default {
             const novoUsuario = {
               nome: this.nome,
               email: this.email,
-              senha: this.senha
+              senha: this.senha,
+              origem: this.origem
             }
         
             const res = await api.post('/cadastro', novoUsuario)
@@ -73,6 +88,7 @@ export default {
               this.nome = "";
               this.email = "";
               this.senha = "";
+              this.origem = "";
               
               
               this.$router.push("/clientes");
@@ -172,5 +188,19 @@ export default {
 
 .mensagem{
     margin-top: 10;
+}
+
+
+select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  background: #334155;
+  border: none;
+  border-radius: 6px;
+  color: #e2e8f0;
+  font-size: 15px;
+  outline: none;
+  transition: 0.3s;
 }
 </style>

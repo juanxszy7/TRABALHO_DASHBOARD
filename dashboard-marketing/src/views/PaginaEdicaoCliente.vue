@@ -26,6 +26,18 @@
             <option value="true">Sim</option>
           </select>
         </div>
+        
+        <div class="campo">
+          <label>Origem:</label>
+          <select v-model="usuario.origem">
+            <option disabled value="">Como conheceu a loja?</option>
+            <option>Instagram</option>
+            <option>Google</option>
+            <option>Facebook</option>
+            <option>Indicação</option>
+            <option>Outro</option>
+          </select>
+        </div>
 
         <div class="botoes">
           <button type="submit" class="btn salvar">Salvar</button>
@@ -52,7 +64,7 @@ export default {
   name: "EditarUsuario",
   data() {
     return {
-      usuario: { nome: "", email: "", senha: "" },
+      usuario: { nome: "", email: "", senha: "", origem: "" },
       adminSelecionado: "false",
       mostrarModal: false,
       modalTitulo: "",
@@ -67,6 +79,7 @@ export default {
           nome: this.usuario.nome,
           email: this.usuario.email,
           senha: this.usuario.senha,
+          origem: this.usuario.origem,
           admin: this.adminSelecionado === "true",
         };
         const res = await api.put(`/editarUsuarios/${id}`, dadosAtualizados);

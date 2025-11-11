@@ -31,7 +31,11 @@ const UsuarioSchema = new mongoose.Schema({
   },
   senha:{
     type: String,
-    default: 123
+    required: true
+  },
+  origem:{
+    type: String,
+    required: true
   },
   admin: {
     type: Boolean,
@@ -91,6 +95,24 @@ const VendaSchema = new mongoose.Schema({
 const Venda = mongoose.model('Venda', VendaSchema);
 
 
+// -------------------------------------------------------- Rota de Origem ----------------------------------------------------------
+
+app.get('/estatisticas', async (req, res) => {
+  try {
+    const resultado = await Usuario.aggregate([
+      { $group: { _id: "$origem", total: { $sum: 1 } } },
+      { $sort: { total: -1 } }
+    ]);
+
+    res.json(resultado);
+
+  } catch (erro) {
+    console.error("❌ Erro ao buscar estatísticas:", erro);
+    res.status(500).json({ message: "Erro no servidor ao buscar estatísticas" });
+  }
+});
+
+
 // ----------------------------------------------------------- Rota Vendedor --------------------------------------------------------
 app.get('/vendedores', async (req, res) => {
 
@@ -121,7 +143,7 @@ app.post('/cadastro', async (req, res) => {
 
     try {
 
-        const { nome, email } = req.body;
+        const { nome, email, senha, origem } = req.body;
 
         const UsuarioExistente = await Usuario.findOne({email})
 
@@ -129,9 +151,13 @@ app.post('/cadastro', async (req, res) => {
             return res.status(400).json({ message: "Usuário já cadastrado" })
         }
 
+        senhaCriptografada = await bcrypt.hash(senha, 8)
+
         const novoUsuario = new Usuario({
             nome,
-            email
+            email,
+            senha: senhaCriptografada,
+            origem
         })
 
         await novoUsuario.save() 
@@ -232,13 +258,14 @@ app.get('/clientes/:id', async (req, res) => {
 app.put('/editarUsuarios/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { nome, email, senha, admin } = req.body;
+    const { nome, email, senha, admin, origem } = req.body;
 
     const atualizacoes = {};
 
     if (nome) atualizacoes.nome = nome;
     if (email) atualizacoes.email = email;
     if (admin !== undefined) atualizacoes.admin = admin;
+    if (origem !== undefined) atualizacoes.origem = origem;
 
     if (senha) {
       const senhaCriptografada = await bcrypt.hash(senha, 8);
@@ -413,7 +440,7 @@ app.delete('/vendas/:id', async (req, res) => {
 //-------------------------------------------------------- Dashboard -----------------------------------------------
 
 //Rota de Faturamento mensal
-app.get('/dashboard/faturamento-mensal', async (req, res) => {
+app.get('/faturamento-mensal', async (req, res) => {
   try {
     const resultados = await Venda.aggregate([
       {

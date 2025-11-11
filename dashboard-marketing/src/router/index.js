@@ -7,6 +7,8 @@ import ListagemVendedores from '@/views/ListagemVendedores.vue'
 import ListagemVendas from '@/views/ListagemVendas.vue'
 import CadastroNovaVenda from '@/views/CadastroNovaVenda.vue'
 import EditarVenda from '@/views/EditarVenda.vue'
+import GraficosMarketing from '@/views/GraficosMarketing.vue'
+import FaturamentoMensal from '@/views/FaturamentoMensal.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -50,6 +52,16 @@ const router = createRouter({
       path: '/editarVenda/:id',
       name: 'EditarVenda',
       component: EditarVenda,
+    },
+    {
+      path: '/estatisticas',
+      name: 'GraficosMarketing',
+      component: GraficosMarketing,
+    },
+    {
+      path: '/faturamentoMensal',
+      name: 'FaturamentoMensal',
+      component: FaturamentoMensal,
     },
     
   ],

@@ -18,6 +18,7 @@
               <th>ID</th>
               <th>Nome</th>
               <th>Email</th>
+              <th>Origem</th>
               <th colspan="2">Ações</th>
             </tr>
           </thead>
@@ -26,6 +27,7 @@
               <td>{{ usuario._id }}</td>
               <td>{{ usuario.nome }}</td>
               <td>{{ usuario.email }}</td>
+              <td>{{ usuario.origem }}</td>
               <td><button class="excluir" @click="excluirCliente(usuario._id)"><i class="bi bi-trash-fill"></i></button></td>
               <td><button class="editar" @click="editarCliente(usuario._id)"><i class="bi bi-pencil-fill"></i></button></td>
             </tr>
