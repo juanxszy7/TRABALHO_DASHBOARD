@@ -58,7 +58,7 @@
       </transition>
 
       <button class="btn atualizar" @click="carregarDados">
-        🔄 Atualizar Dados
+        Atualizar Dados
       </button>
     </div>
   </div>
@@ -134,7 +134,7 @@ export default {
       this.erro = null;
       try {
         const res = await api.get("/estatisticas");
-        console.log("📊 Dados recebidos:", res.data);
+        console.log("Dados recebidos:", res.data);
 
         const dados = res.data;
         if (!Array.isArray(dados) || dados.length === 0) {

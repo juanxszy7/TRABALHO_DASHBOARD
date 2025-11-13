@@ -125,6 +125,11 @@
             pagMetodo: this.venda.pagMetodo,
           };
   
+          if (novaVenda.valor < 0 ) {
+            this.mensagem = "O valor da venda não pode ser abaixo de 0"
+            return this.mensagem
+          }
+
           const res = await api.post("/novaVenda", novaVenda);
   
           this.mensagem = res.data.message || "Venda cadastrada com sucesso!";

@@ -61,6 +61,27 @@ const VendedorSchema = new mongoose.Schema({
 });
 const Vendedor = mongoose.model('Vendedor', VendedorSchema)
 
+const ProdSchema = mongoose.Schema({
+  produto:{
+    type: String,
+    required: true
+  },
+  valor:{
+    type: Number,
+    required: true,
+  },
+  criadoEm: {
+    type: Date,
+    default: Date.now
+  },
+  estoque:{
+    type: Number,
+    default: 0,
+    min: 0
+  }
+})
+const Produto = mongoose.model('Produto', ProdSchema)
+
 
 //Modelo de vendas
 const VendaSchema = new mongoose.Schema({
@@ -75,7 +96,8 @@ const VendaSchema = new mongoose.Schema({
   },
   valor: {
     type: Number,
-    required: true
+    required: true,
+    min: 0
   },
   dataVenda: {
     type: Date,
@@ -333,6 +355,64 @@ app.delete('/clientes/:id', async (req, res) => {
     }
 
 });
+
+// ---------------------------------------------------------- Rotas de produto --------------------------------------------------------
+
+app.post('/novoProduto', async (req, res) => {
+
+  try {
+    
+    const { produto, valor, estoque } = req.body;
+
+    //Busca Produtos com o mesmo nome
+    const produtoExistente = await Produto.findOne({ produto });
+    if (produtoExistente) {
+
+      produtoExistente.estoque += estoque;
+      await produtoExistente.save();
+      return res.status(200).json({ message: "Estoque atualizado com sucesso", produto: produtoExistente })
+
+    };
+
+    const novoProduto = new Produto({
+      produto,
+      valor,
+      estoque
+    });
+    await novoProduto.save();
+
+    return res.status(201).json({ message: "Produto cadastrado com sucesso", produto: novoProduto })
+
+  } catch (err) {
+    return res.status(500).json({ message: "Erro ao cadastrar novo produto"})    
+  }
+
+});
+
+app.put('/editarProduto/:id', async (req, res) => {
+
+  const { id } = req.params
+  const { produto, valor, estoque} = req.body
+
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // ----------------------------------------------------------------- Rotas Vendas -----------------------------------------------------------

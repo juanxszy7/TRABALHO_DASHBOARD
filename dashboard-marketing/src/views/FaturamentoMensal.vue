@@ -3,6 +3,11 @@
     <div class="card" :class="{ animar: animando }">
       <h2>Faturamento Mensal</h2>
 
+      <p class="total-anual">
+        Total Anual: 
+        <strong>R$ {{ totalAnual.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }}</strong>
+      </p>
+
       <div class="acoes">
         <button @click="atualizarGrafico" class="botao">
           Atualizar Gráfico
@@ -32,6 +37,7 @@ export default {
       ],
       grafico: null,
       animando: false,
+      totalAnual: 0, 
     };
   },
   methods: {
@@ -44,6 +50,9 @@ export default {
         dados.forEach(item => {
           valoresPorMes[Number(item._id) - 1] = item.total;
         });
+
+        // 💡 Calcula o total anual
+        this.totalAnual = valoresPorMes.reduce((a, b) => a + b, 0);
 
         const ctx = document
           .getElementById("graficoFaturamento")
@@ -150,11 +159,20 @@ export default {
 }
 
 .card h2 {
-  margin-bottom: 25px;
+  margin-bottom: 10px;
   font-weight: 600;
   color: #60a5fa;
   font-size: 26px;
   text-shadow: 0 0 10px rgba(96, 165, 250, 0.5);
+}
+
+/* 💰 Estilo do total anual */
+.total-anual {
+  font-size: 18px;
+  font-weight: 500;
+  color: #38bdf8;
+  margin-bottom: 20px;
+  text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);
 }
 
 .acoes {
