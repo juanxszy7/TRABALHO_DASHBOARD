@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="card">
-      <h2>📊 Como os Clientes Encontraram a Loja</h2>
+      <h2>Como os Clientes Encontraram a Loja</h2>
 
       <div v-if="carregando" class="status">Carregando dados...</div>
       <div v-if="erro" class="status erro">{{ erro }}</div>

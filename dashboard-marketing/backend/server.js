@@ -389,10 +389,85 @@ app.post('/novoProduto', async (req, res) => {
 
 });
 
+app.get('/produtos', async (req, res) => {
+  try {
+    const produtos = await Produto.find()
+    res.json(produtos)
+  } catch (err) {
+    return res.status(500).json({message: "Erro ao buscar produtos"})
+}
+
+})
+
+
+app.get('/produto/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const produto = await Produto.findById(id);
+
+    if (!produto) {
+      return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    return res.json({ produto });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Erro ao buscar produto", erro: err.message });
+  }
+});
+
+
+app.delete('/produto/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const produtoDeletado = await Produto.findByIdAndDelete(id);
+
+    if (!produtoDeletado) {
+      return res.status(404).json({ message: "Produto não encontrado" });
+    }
+
+    return res.json({ message: "Produto deletado com sucesso", produtoDeletado });
+
+  } catch (err) {
+    return res.status(500).json({ message: "Erro ao deletar produto", erro: err.message });
+  }
+});
+
+
+
+
+
+
 app.put('/editarProduto/:id', async (req, res) => {
 
-  const { id } = req.params
-  const { produto, valor, estoque} = req.body
+  try {
+
+    const { id } = req.params
+    const { produto, valor, estoque} = req.body
+
+    const atualizacoes = {}
+    
+    if (produto) atualizacoes.produto = produto
+    if (valor) atualizacoes.valor = valor
+    if (estoque) atualizacoes.estoque = estoque
+
+    const produtoAtualizado = await Produto.findByIdAndUpdate(id, atualizacoes, {new: true})
+
+    if (!produtoAtualizado){
+      return res.status(404).json({message: "Produto não econtrado", produtoAtualizado})
+    }
+
+    res.json({ message: "Produto atualizado com sucesso", produtoAtualizado });
+
+  } catch (err) {
+    
+    return res.status(500).json({message: "Erro ao atualizar produto"})
+
+  }
+
+  
 
 
 })

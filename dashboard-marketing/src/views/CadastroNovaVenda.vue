@@ -1,7 +1,7 @@
 <template>
     <div class="container">
       <div class="card">
-        <h2>🧾 Cadastrar Venda</h2>
+        <h2>Cadastrar Venda</h2>
   
         <form @submit.prevent="cadastrarVenda" class="formulario">
 
@@ -65,7 +65,7 @@
             </select>
           </div>
   
-          <button type="submit" class="btn salvar">💾 Cadastrar Venda</button>
+          <button type="submit" class="btn salvar">Cadastrar Venda</button>
         </form>
   
         <p v-if="mensagem" class="mensagem">{{ mensagem }}</p>
