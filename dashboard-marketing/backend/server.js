@@ -5,6 +5,7 @@ const mongoose = require('mongoose')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 
+
 //Inicialização
 const app = express()
 app.use(cors())
@@ -374,6 +375,10 @@ app.post('/novoProduto', async (req, res) => {
 
     };
 
+    if (valor <= 0) {
+      return res.status(500).json({ message: "Erro ao cadastrar produto" })
+    }
+
     const novoProduto = new Produto({
       produto,
       valor,
@@ -389,6 +394,7 @@ app.post('/novoProduto', async (req, res) => {
 
 });
 
+//Mostrar produtos
 app.get('/produtos', async (req, res) => {
   try {
     const produtos = await Produto.find()
@@ -399,7 +405,7 @@ app.get('/produtos', async (req, res) => {
 
 })
 
-
+//Mostrar Produto especifico
 app.get('/produto/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -417,7 +423,7 @@ app.get('/produto/:id', async (req, res) => {
   }
 });
 
-
+//Deletar produto
 app.delete('/produto/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -439,7 +445,7 @@ app.delete('/produto/:id', async (req, res) => {
 
 
 
-
+//editar produto
 app.put('/editarProduto/:id', async (req, res) => {
 
   try {
@@ -471,23 +477,6 @@ app.put('/editarProduto/:id', async (req, res) => {
 
 
 })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 // ----------------------------------------------------------------- Rotas Vendas -----------------------------------------------------------

@@ -1,261 +1,316 @@
 <template>
-    <div class="container">
-      <div class="card">
-        <h2>Vendedores Cadastrados</h2>
-  
-        <!-- Estado de carregamento -->
-        <p v-if="loading" class="status">Carregando clientes...</p>
-  
-        <!-- Mensagem de erro -->
-        <p v-else-if="erro" class="status erro">{{ erro }}</p>
+  <div class="container">
+    <div class="card">
 
-        <!-- <p v-else-if="usuarios.length >= 1">Nenhum cliente cadastrado</p> -->
-  
-        <!-- Tabela de usuários -->
-        <table v-else class="tabela">
+      <!-- Cabeçalho -->
+      <div class="header-row">
+        <h2>Vendedores Cadastrados</h2>
+
+        <div class="acoes-topo">
+          <input
+            v-model="q"
+            @input="debounceBuscar"
+            placeholder="Buscar vendedor..."
+            class="input-busca"
+          />
+
+          <button class="btn novo" @click="$router.push('/novoVendedor')">
+            Novo Vendedor
+          </button>
+        </div>
+      </div>
+
+      <!-- Estados -->
+      <p v-if="loading" class="status">Carregando vendedores...</p>
+      <p v-else-if="erro" class="status erro">{{ erro }}</p>
+
+      <!-- Tabela -->
+      <div v-else class="table-wrap">
+        <table class="tabela">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Nome</th>
-              <th>Email</th>
-              <th colspan="2">Ações</th>
+              <th @click="ordenarPor('nome')" class="clickable">
+                Nome
+                <span v-if="ordenar.campo === 'nome'">
+                  {{ ordenar.direcao === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
+
+              <th @click="ordenarPor('email')" class="clickable">
+                Email
+                <span v-if="ordenar.campo === 'email'">
+                  {{ ordenar.direcao === 'asc' ? '▲' : '▼' }}
+                </span>
+              </th>
+
+              <th>Ações</th>
             </tr>
           </thead>
+
           <tbody>
-            <tr v-for="vendedor in vendedores" :key="vendedor._id">
-              <td>{{ vendedor._id }}</td>
-              <td>{{ vendedor.nome }}</td>
-              <td>{{ vendedor.email }}</td>
-              <td><button class="excluir" @click=""><i class="bi bi-trash-fill"></i></button></td>
-              <td><button class="editar" @click=""><i class="bi bi-pencil-fill"></i></button></td>
+            <tr v-for="v in vendedoresOrdenados" :key="v.id">
+              <td>{{ v.nome }}</td>
+              <td>{{ v.email }}</td>
+
+              <td>
+                <button class="btn editar" @click="editar(v.id)">Editar</button>
+                <button class="btn excluir" @click="excluir(v.id)">Excluir</button>
+              </td>
             </tr>
           </tbody>
         </table>
-  
-        <!-- Botões -->
+      </div>
 
-        <div class="botoes">
-            <button @click="carregarVendedores" class="btn atualizar">Recarregar Vendedores</button>
-            <button @click="listaDeClientes" class="btn atualizar">Lista de Clientes</button>
-            <button @click="listadeVendas" class="btn atualizar">Lista de Vendas</button>
-        </div>
-        
-      </div>    
+      <!-- Botão atualizar -->
+      <div class="botoes">
+        <button class="btn azul atualizar" @click="carregar">Atualizar Lista</button>
+      </div>
 
     </div>
-    
-  </template>
-  
-  <script>
-  import api from "@/service/api";
-  
-  export default {
-    name: "ListademDeVendedores",
-    data() {
-      return {
-        vendedores: [],
-        loading: false,
-        erro: "",
-        modalAberto: false,
-        id: null,
-      };
-    },
-    methods: {
+  </div>
+</template>
 
+<script setup>
+import { ref, computed } from "vue";
+import api from "@/service/api";
 
-      async carregarVendedores() {
-        try {
-          this.loading = true;
-          this.erro = "";
-  
-          // Faz a requisição para o backend
-          const res = await api.get("/vendedores");
-  
-          this.vendedores = res.data;
+const vendedores = ref([]);
+const loading = ref(false);
+const erro = ref("");
+const q = ref("");
 
+const ordenar = ref({
+  campo: "nome",
+  direcao: "asc",
+});
 
-        } catch (error) {
-          console.error(error);
-          this.erro = "Erro ao carregar clientes.";
-        } finally {
-          this.loading = false;
-        }
-      },
+// -------- BUSCA COM DEBOUNCE --------
+let timerBusca = null;
 
+const debounceBuscar = () => {
+  clearTimeout(timerBusca);
+  timerBusca = setTimeout(() => {
+    aplicarFiltro();
+  }, 300);
+};
 
-    //   async excluirCliente(id){
+// -------- CARREGAR LISTA --------
+async function carregar() {
+  loading.value = true;
+  erro.value = "";
 
-    //     try {
-            
-    //         const res = await api.delete(`/clientes/${id}`)
-
-
-    //         if (res) {
-                
-    //             this.usuarios = this.usuarios.filter(usuario => usuario._id !== id);
-
-    //             this.modalAberto = false
-                
-    //         }
-
-    //         return res
-
-    //     } catch (err) {
-            
-    //         this.modalAberto = false
-
-    //         return alert("Erro ao excluir cliente")
-
-    //     }
-
-    
-
-      //},
-
-      editarCliente(id){
-
-        this.$router.push(`/editarUsuario/${id}`)
-
-      },
-
-
-      cadastrarClientes(){
-
-        this.$router.push("/cadastro")
-
-      },
-
-      listaDeClientes(){
-
-        this.$router.push('/clientes')
-
-      },
-
-      listadeVendas(){
-        this.$router.push('/vendas')
-      }
-
-
-
-    },
-    mounted() {
-      this.carregarVendedores();
-    },
-  };
-  </script>
-  
-  <style scoped>
-  /* Fundo geral */
-  .container {
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    background: #0f172a;
-    font-family: "Roboto", sans-serif;
-    padding-top: 50px;
-  }
-  
-  /* Card principal */
-  .card {
-    background: #1e293b;
-    padding: 40px;
-    border-radius: 12px;
-    width: 80%;
-    max-width: 800px;
-    box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.4);
-    color: #fff;
-    text-align: center;
-  }
-  
-  .card h2 {
-    margin-bottom: 25px;
-    font-weight: 600;
-    color: #60a5fa;
-  }
-  
-  /* Estado e mensagens */
-  .status {
-    color: #cbd5e1;
-    font-size: 15px;
-    margin-bottom: 10px;
-  }
-  
-  .status.erro {
-    color: #f87171;
-  }
-  
-  /* Tabela */
-  .tabela {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-    background: #334155;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  
-  .tabela th,
-  .tabela td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #475569;
-    text-align: left;
-    color: #e2e8f0;
-    font-size: 14px;
-  }
-  
-  .tabela th {
-    background-color: #3b82f6;
-    color: #fff;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-  
-  .tabela tr:hover {
-    background: #475569;
-    transition: 0.3s;
-  }
-  
-  /* Botão recarregar */
-  .btn.atualizar {
-    margin-top: 20px;
-    background: #3b82f6;
-    border: none;
-    border-radius: 6px;
-    padding: 12px 20px;
-    font-size: 15px;
-    color: #fff;
-    cursor: pointer;
-    transition: 0.3s;
-  }
-  
-  .btn.atualizar:hover {
-    background: #2563eb;
+  try {
+    const { data } = await api.get("/vendedores");
+    vendedores.value = data;
+  } catch (e) {
+    erro.value = "Erro ao carregar vendedores.";
   }
 
-  .excluir{
-    background-color: red;
-    border: none;
-    color: white;
-    padding: 10px;
-    border-radius: 100%;
-    cursor: pointer;
-  }
+  loading.value = false;
+}
 
-  .editar{
-    color: white;
-    background-color: #ebbc00;
-    border: none;
-    padding: 10px;
-    border-radius: 100%;
-    cursor: pointer;
-  }
+carregar();
 
-  .botoes{
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-  }
+// -------- FILTRO --------
+const vendedoresFiltrados = computed(() => {
+  return vendedores.value.filter((v) =>
+    v.nome.toLowerCase().includes(q.value.toLowerCase())
+  );
+});
 
-  </style>
-  
+// -------- ORDENAÇÃO --------
+function ordenarPor(campo) {
+  if (ordenar.value.campo === campo) {
+    ordenar.value.direcao =
+      ordenar.value.direcao === "asc" ? "desc" : "asc";
+  } else {
+    ordenar.value.campo = campo;
+    ordenar.value.direcao = "asc";
+  }
+}
+
+const vendedoresOrdenados = computed(() => {
+  return [...vendedoresFiltrados.value].sort((a, b) => {
+    const campo = ordenar.value.campo;
+    const dir = ordenar.value.direcao === "asc" ? 1 : -1;
+
+    return a[campo].localeCompare(b[campo]) * dir;
+  });
+});
+
+// -------- AÇÕES --------
+function editar(id) {
+  alert("Editar vendedor: " + id);
+}
+
+async function excluir(id) {
+  if (!confirm("Excluir este vendedor?")) return;
+
+  try {
+    await axios.delete(`http://localhost:3333/vendedor/${id}`);
+    carregar();
+  } catch (e) {
+    alert("Erro ao excluir.");
+  }
+}
+
+function aplicarFiltro() {
+  // Função chamada pelo debounce (já atualiza a lista filtrada)
+}
+</script>
+
+<style scoped>
+/* ---------- ESTILO COMPLETO ---------- */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #0f172a;
+  font-family: "Roboto", sans-serif;
+  padding-top: 40px;
+}
+
+.card {
+  background: #1e293b;
+  padding: 28px;
+  border-radius: 12px;
+  width: 92%;
+  max-width: 980px;
+  box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.header-row h2 {
+  color: #60a5fa;
+  margin: 0;
+  font-weight: 600;
+}
+
+.acoes-topo {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.input-busca {
+  padding: 10px 12px 10px 38px;
+  width: 220px;
+  background: #0f172a;
+  border: 1px solid #475569;
+  border-radius: 8px;
+  color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg width='18' height='18' stroke='%23cbd5e1' fill='none' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: 10px center;
+  transition: 0.2s;
+}
+
+.input-busca:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.35);
+}
+
+/* Tabela */
+.table-wrap {
+  overflow-x: auto;
+}
+
+.tabela {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabela th {
+  background: #334155;
+  color: #93c5fd;
+  padding: 12px;
+  border-bottom: 2px solid #475569;
+  font-weight: 600;
+}
+
+.tabela td {
+  padding: 12px;
+  border-bottom: 1px solid #475569;
+  color: #e2e8f0;
+}
+
+.tabela tr:hover {
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Botões */
+.btn {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn.novo {
+  background: #10b981;
+  color: white;
+}
+
+.btn.novo:hover {
+  background: #059669;
+}
+
+.btn.editar {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn.editar:hover {
+  background: #60a5fa;
+}
+
+.btn.excluir {
+  background: #ef4444;
+  color: white;
+}
+
+.btn.excluir:hover {
+  background: #dc2626;
+}
+
+.botoes {
+  margin-top: 25px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.btn.azul {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn.azul:hover {
+  background: #60a5fa;
+}
+
+/* Estados */
+.status {
+  color: #cbd5e1;
+  font-size: 15px;
+}
+
+.status.erro {
+  color: #f87171;
+}
+</style>

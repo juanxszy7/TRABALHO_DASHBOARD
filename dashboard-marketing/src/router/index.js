@@ -9,6 +9,9 @@ import CadastroNovaVenda from '@/views/CadastroNovaVenda.vue'
 import EditarVenda from '@/views/EditarVenda.vue'
 import GraficosMarketing from '@/views/GraficosMarketing.vue'
 import FaturamentoMensal from '@/views/FaturamentoMensal.vue'
+import CadastroNovoProduto from '@/views/CadastroNovoProduto.vue'
+import ListaProdutos from '@/views/ListaProdutos.vue'
+import EditarProduto from '@/views/EditarProduto.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -62,6 +65,21 @@ const router = createRouter({
       path: '/faturamentoMensal',
       name: 'FaturamentoMensal',
       component: FaturamentoMensal,
+    },
+    {
+      path: '/novoProduto',
+      name: 'CadastroNovoProduto',
+      component: CadastroNovoProduto,
+    },
+    {
+      path: '/produtos',
+      name: 'ListaProdutos',
+      component: ListaProdutos,
+    },
+    {
+      path: '/editarProduto/:id',
+      name: 'EditarProduto',
+      component: EditarProduto,
     },
     
   ],

@@ -2,37 +2,25 @@
   <div class="container">
     <div class="card">
       <div class="header-row">
-        <h2>Vendas Registradas</h2>
-
-        <!-- Barra de pesquisa -->
+        <h2>Produtos Cadastrados</h2>
         <div class="acoes-topo">
           <input
             v-model="q"
             @input="debounceBuscar"
-            placeholder="Buscar venda..."
+            placeholder="Buscar produto..."
             class="input-busca"
           />
-          <button class="btn novo" @click="$router.push('/novaVenda')">Nova Venda</button>
+          <button class="btn novo" @click="$router.push('/novoProduto')">Novo Produto</button>
         </div>
       </div>
 
-      <!-- Status -->
-      <p v-if="loading" class="status">Carregando vendas...</p>
-      <p v-else-if="vendasFiltro.length === 0" class="status">Nenhuma venda encontrada.</p>
+      <p v-if="loading" class="status">Carregando produtos...</p>
+      <p v-else-if="produtosFiltro.length === 0" class="status">Nenhum produto encontrado.</p>
 
-      <!-- Tabela -->
       <div v-else class="table-wrap">
         <table class="tabela">
           <thead>
             <tr>
-              <th @click="ordenarPor('_id')">
-                ID
-                <span class="sort-ind">{{ getSortIcon('_id') }}</span>
-              </th>
-              <th @click="ordenarPor('cliente.nome')">
-                Cliente
-                <span class="sort-ind">{{ getSortIcon('cliente.nome') }}</span>
-              </th>
               <th @click="ordenarPor('produto')">
                 Produto
                 <span class="sort-ind">{{ getSortIcon('produto') }}</span>
@@ -41,31 +29,22 @@
                 Valor (R$)
                 <span class="sort-ind">{{ getSortIcon('valor') }}</span>
               </th>
-              <th @click="ordenarPor('vendedor.nome')">
-                Vendedor
-                <span class="sort-ind">{{ getSortIcon('vendedor.nome') }}</span>
-              </th>
-              <th>Método</th>
-              <th @click="ordenarPor('dataVenda')">
-                Data da Venda
-                <span class="sort-ind">{{ getSortIcon('dataVenda') }}</span>
+              <th @click="ordenarPor('estoque')">
+                Estoque
+                <span class="sort-ind">{{ getSortIcon('estoque') }}</span>
               </th>
               <th>Ações</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr v-for="v in paginaAtualItems" :key="v._id">
-              <td>{{ v._id }}</td>
-              <td>{{ v.cliente?.nome || "—" }}</td>
-              <td>{{ v.produto }}</td>
-              <td>R$ {{ Number(v.valor).toFixed(2).replace('.', ',') }}</td>
-              <td>{{ v.vendedor?.nome || "—" }}</td>
-              <td>{{ v.pagMetodo }}</td>
-              <td>{{ formatarData(v.dataVenda) }}</td>
+            <tr v-for="p in paginaAtualItems" :key="p._id">
+              <td>{{ p.produto }}</td>
+              <td>R$ {{ Number(p.valor).toFixed(2) }}</td>
+              <td>{{ p.estoque }}</td>
               <td>
-                <button class="btn editar" @click="editarVenda(v._id)">Editar</button>
-                <button class="btn excluir" @click="abrirModalExcluir(v)">Excluir</button>
+                <button class="btn editar" @click="editarProduto(p._id)">Editar</button>
+                <button class="btn excluir" @click="abrirModalExcluir(p)">Excluir</button>
               </td>
             </tr>
           </tbody>
@@ -75,7 +54,6 @@
       <!-- Paginação -->
       <div v-if="totalPages > 1" class="paginacao">
         <button @click="irParaPagina(currentPage - 1)" :disabled="currentPage === 1">‹</button>
-        
         <button
           v-for="n in paginaVisivel"
           :key="n"
@@ -84,26 +62,30 @@
         >
           {{ n }}
         </button>
-
         <button @click="irParaPagina(currentPage + 1)" :disabled="currentPage === totalPages">›</button>
       </div>
 
-      <!-- Mensagem -->
       <p v-if="mensagem" class="mensagem">{{ mensagem }}</p>
 
-      <!-- Navegação -->
-      <div class="navegacao">
-        <button class="btn azul" @click="$router.push('/clientes')">Lista de Clientes</button>
-        <button class="btn azul" @click="$router.push('/vendedores')">Lista de Vendedores</button>
-        <button class="btn azul" @click="$router.push('/produtos')">Lista de Produtos</button>
+      <div class="navegacao">      
+        <button class="btn azul" @click="$router.push('/clientes')">
+          Lista de clientes
+        </button>
+        <button class="btn azul" @click="$router.push('/vendedores')">
+          Ir para vendedores
+        </button>
+        <button class="btn azul" @click="$router.push('/vendas')">
+          Ir para Vendas
+        </button>
       </div>
     </div>
 
-    <!-- Modal Exclusão -->
+
+    <!-- Modal de confirmação de exclusão -->
     <div v-if="modalVisivel" class="modal-overlay" @click.self="fecharModal">
       <div class="modal">
-        <h3>Excluir Venda</h3>
-        <p>Tem certeza que deseja excluir a venda de <strong>{{ vendaSelecionada.produto }}</strong>?</p>
+        <h3>Excluir Produto</h3>
+        <p>Tem certeza que deseja excluir <strong>{{ produtoSelecionado.produto }}</strong>?</p>
         <div class="modal-actions">
           <button class="btn cancelar" @click="fecharModal">Cancelar</button>
           <button class="btn excluir" @click="confirmarExcluir">Excluir</button>
@@ -117,132 +99,122 @@
 import api from "@/service/api";
 
 export default {
-  name: "ListarVendas",
+  name: "ListaProdutos",
   data() {
     return {
-      vendas: [],
+      produtos: [],
       loading: true,
       mensagem: "",
       q: "",
       buscaTimer: null,
-
       // paginação
       perPage: 8,
       currentPage: 1,
-
       // ordenação
-      sortKey: "_id",
-      sortDir: "asc",
-
+      sortKey: "produto",
+      sortDir: "asc", // asc | desc
       // modal
       modalVisivel: false,
-      vendaSelecionada: null
+      produtoSelecionado: null,
     };
   },
-
   computed: {
-    vendasFiltro() {
+    produtosFiltro() {
       const q = this.q.trim().toLowerCase();
-      let arr = this.vendas.slice();
+      let arr = this.produtos.slice();
 
       if (q) {
-        arr = arr.filter((v) =>
-          (v.cliente?.nome || "").toLowerCase().includes(q) ||
-          (v.produto || "").toLowerCase().includes(q) ||
-          String(v.valor).includes(q) ||
-          (v.vendedor?.nome || "").toLowerCase().includes(q) ||
-          (v.pagMetodo || "").toLowerCase().includes(q)
+        arr = arr.filter(
+          (p) =>
+            (p.produto && p.produto.toLowerCase().includes(q)) ||
+            (String(p.valor) && String(p.valor).includes(q)) ||
+            (String(p.estoque) && String(p.estoque).includes(q))
         );
       }
 
       // ordenação
       arr.sort((a, b) => {
-        const A = this.getNestedValue(a, this.sortKey);
-        const B = this.getNestedValue(b, this.sortKey);
+        const A = a[this.sortKey];
+        const B = b[this.sortKey];
 
         if (A == null) return 1;
         if (B == null) return -1;
 
-        const res = String(A).localeCompare(String(B), undefined, { numeric: true });
-        return this.sortDir === "asc" ? res : -res;
+        if (this.sortKey === "produto") {
+          const res = String(A).localeCompare(String(B), undefined, { sensitivity: "base" });
+          return this.sortDir === "asc" ? res : -res;
+        } else {
+          const numA = Number(A);
+          const numB = Number(B);
+          const res = numA - numB;
+          return this.sortDir === "asc" ? res : -res;
+        }
       });
 
       return arr;
     },
-
     totalPages() {
-      return Math.max(1, Math.ceil(this.vendasFiltro.length / this.perPage));
+      return Math.max(1, Math.ceil(this.produtosFiltro.length / this.perPage));
     },
-
     paginaAtualItems() {
       const start = (this.currentPage - 1) * this.perPage;
-      return this.vendasFiltro.slice(start, start + this.perPage);
+      return this.produtosFiltro.slice(start, start + this.perPage);
     },
-
     paginaVisivel() {
+      // calcula um range simples de páginas a mostrar (máx 7)
       const total = this.totalPages;
       const cur = this.currentPage;
       const max = 7;
       let start = Math.max(1, cur - Math.floor(max / 2));
       let end = Math.min(total, start + max - 1);
       if (end - start + 1 < max) start = Math.max(1, end - max + 1);
-
-      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
-    }
-  },
-
-  methods: {
-    getNestedValue(obj, path) {
-      return path.split(".").reduce((o, k) => (o ? o[k] : null), obj);
+      const arr = [];
+      for (let i = start; i <= end; i++) arr.push(i);
+      return arr;
     },
-
-    async carregarVendas() {
+  },
+  methods: {
+    async carregarProdutos() {
       try {
-        const res = await api.get("/vendas");
-        this.vendas = res.data;
-      } catch (e) {
-        console.error(e);
-        this.mensagem = "Erro ao carregar vendas.";
+        this.loading = true;
+        const res = await api.get("/produtos");
+        this.produtos = res.data;
+      } catch (error) {
+        console.error("Erro ao carregar produtos:", error);
+        this.mensagem = "Erro ao carregar produtos.";
       } finally {
         this.loading = false;
       }
     },
 
-    formatarData(data) {
-      const d = new Date(data);
-      return d.toLocaleString("pt-BR");
+    editarProduto(id) {
+      this.$router.push(`/editarProduto/${id}`);
     },
 
-    editarVenda(id) {
-      this.$router.push(`/editarVenda/${id}`);
-    },
-
-    abrirModalExcluir(venda) {
-      this.vendaSelecionada = venda;
+    abrirModalExcluir(produto) {
+      this.produtoSelecionado = produto;
       this.modalVisivel = true;
     },
 
     fecharModal() {
       this.modalVisivel = false;
-      this.vendaSelecionada = null;
+      this.produtoSelecionado = null;
     },
 
     async confirmarExcluir() {
-      if (!this.vendaSelecionada) return;
-
+      if (!this.produtoSelecionado) return;
       try {
-        const id = this.vendaSelecionada._id;
-        await api.delete(`/vendas/${id}`);
-
-        this.vendas = this.vendas.filter((v) => v._id !== id);
-        this.mensagem = "Venda excluída com sucesso.";
-
+        const id = this.produtoSelecionado._id;
+        const res = await api.delete(`/produto/${id}`);
+        this.mensagem = res.data.message || "Produto excluído.";
+        // atualiza lista localmente
+        this.produtos = this.produtos.filter((p) => p._id !== id);
         this.fecharModal();
-
+        // ajusta página se necessário
         if (this.currentPage > this.totalPages) this.currentPage = this.totalPages;
-      } catch (e) {
-        console.error(e);
-        this.mensagem = "Erro ao excluir venda.";
+      } catch (error) {
+        console.error("Erro ao excluir produto:", error);
+        this.mensagem = "Erro ao excluir produto.";
       }
     },
 
@@ -272,18 +244,15 @@ export default {
       this.buscaTimer = setTimeout(() => {
         this.currentPage = 1;
       }, 350);
-    }
+    },
   },
-
   mounted() {
-    this.carregarVendas();
-  }
+    this.carregarProdutos();
+  },
 };
 </script>
 
 <style scoped>
-/* === EXATAMENTE O MESMO ESTILO DA PÁGINA DE PRODUTOS === */
-
 .container {
   min-height: 100vh;
   display: flex;
@@ -299,7 +268,7 @@ export default {
   padding: 28px;
   border-radius: 12px;
   width: 92%;
-  max-width: 1100px;
+  max-width: 980px;
   box-shadow: 0px 0px 25px rgba(0, 0, 0, 0.4);
   color: #fff;
 }
@@ -332,7 +301,7 @@ export default {
   color: #fff;
   outline: none;
   transition: box-shadow 0.2s, border-color 0.2s;
-  min-width: 230px;
+  min-width: 220px;
 }
 
 .input-busca:focus {
@@ -416,7 +385,7 @@ export default {
   font-weight: 500;
 }
 
-/* Paginação */
+/* Paginacao */
 .paginacao {
   margin-top: 16px;
   display: flex;
@@ -498,4 +467,6 @@ export default {
 .btn.azul:hover {
   background: #2563eb;
 }
+
+
 </style>
