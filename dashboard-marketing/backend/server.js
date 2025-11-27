@@ -259,7 +259,7 @@ app.get('/clientes', async (req, res) => {
 app.get('/clientes/:id', async (req, res) => {
     
   const { id } = req.params;
-  console.log("🧩 ID recebido:", id);
+  console.log("ID recebido:", id);
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ mensagem: 'ID inválido' });
@@ -301,7 +301,7 @@ app.put('/editarUsuarios/:id', async (req, res) => {
       return res.status(404).json({ message: "Usuário não encontrado" });
     }
 
-    // ⚡ SE o admin virar TRUE, cria ou atualiza o vendedor
+    // SE o admin virar TRUE, cria ou atualiza o vendedor
     if (usuarioAtualizado.admin === true) {
       const vendedorExistente = await Vendedor.findOne({ usuarioId: id });
 
