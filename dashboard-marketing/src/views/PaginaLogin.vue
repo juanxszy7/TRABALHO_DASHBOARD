@@ -48,22 +48,23 @@
             
             if (res) {
 
-                const { admin, userId } = res.data
-                
-                this.email = ""
-                this.senha = ""
-                
-                
-                if (admin == true) {
-                    
-                    console.log(`Login efetuado, id de adiministrador: ${userId}`)
-                    this.$router.push("/clientes")
-
-                }else{
-
-                    this.mensagem = "Pagina restrita para adminstradores"
-
-                }
+              // PEGAR O TOKEN DO BACKEND
+              const token = res.data.tokenLogin;
+              // SALVAR NO LOCALSTORAGE
+              sessionStorage.setItem("token", token);
+              const { admin, userId } = res.data
+              
+              this.email = ""
+              this.senha = ""
+              
+              
+              if (admin == true) {
+                  
+                  console.log(`Login efetuado, id de adiministrador: ${userId}`)
+                  this.$router.push("/clientes")
+              }else{
+                  this.mensagem = "Pagina restrita para adminstradores"
+              }
 
             }
 

@@ -1,23 +1,31 @@
 //Dependencias
-const express = require('express')
-const cors = require('cors')
-const mongoose = require('mongoose')
-const bcrypt = require('bcrypt')
-const jwt = require('jsonwebtoken')
+import express from "express";
+import cors from "cors";
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import { authToken } from './middlewares/AuthLogin.js'
+import dotenv from 'dotenv'
+
 
 
 //Inicialização
+dotenv.config();
+const JWT_KEY = process.env.JWT_KEY
+console.log("JWT_KEY:", process.env.JWT_KEY);
 const app = express()
 app.use(cors())
 app.use(express.json())
 
 //Conexão com banco de dados
 mongoose.connect("mongodb://localhost:27017/dashboardMarketing", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
+  useNewUrlParser: true,
+  useUnifiedTopology: true
 })  
 .then(() => console.log("✅ Conectado ao MongoDB"))
 .catch(err => console.error("❌ Erro ao conectar ao MongoDB:", err))
+
+
 
 //Modelo de usuario
 const UsuarioSchema = new mongoose.Schema({
@@ -120,7 +128,7 @@ const Venda = mongoose.model('Venda', VendaSchema);
 
 // -------------------------------------------------------- Rota de Origem ----------------------------------------------------------
 
-app.get('/estatisticas', async (req, res) => {
+app.get('/estatisticas', authToken, async (req, res) => {
   try {
     const resultado = await Usuario.aggregate([
       { $group: { _id: "$origem", total: { $sum: 1 } } },
@@ -137,7 +145,7 @@ app.get('/estatisticas', async (req, res) => {
 
 
 // ----------------------------------------------------------- Rota Vendedor --------------------------------------------------------
-app.get('/vendedores', async (req, res) => {
+app.get('/vendedores', authToken, async (req, res) => {
 
   try {
 
@@ -162,7 +170,7 @@ app.get('/vendedores', async (req, res) => {
 // ------------------------------------------------------------ Rotas Clientes ------------------------------------------------------
 
 //Rota de cadastro
-app.post('/cadastro', async (req, res) => {
+app.post('/cadastro', authToken, async (req, res) => {
 
     try {
 
@@ -199,7 +207,7 @@ app.post('/cadastro', async (req, res) => {
 app.post('/login', async (req, res) => {
 
   try {
-    
+  
     const { email, senha } = req.body
 
     const usuarioExistente = await Usuario.findOne({ email })
@@ -218,7 +226,7 @@ app.post('/login', async (req, res) => {
 
     }
 
-    const token = jwt.sign({ id: usuarioExistente._id }, "chaveSecreta")
+    const token = jwt.sign({ id: usuarioExistente._id }, JWT_KEY)
 
     res.status(200).json({
       message: "Login realizado com sucesso!",
@@ -230,7 +238,11 @@ app.post('/login', async (req, res) => {
 
   } catch (err) {
     
-    return res.status(500).json({message: "Erro ao fazer login"})
+    return res.status(500).json({
+      message: "Erro ao fazer login",
+      erro: err.message,   // ← mostra o motivo real
+      stack: err.stack      // ← mostra a linha onde aconteceu
+    })
 
   }
 
@@ -239,7 +251,7 @@ app.post('/login', async (req, res) => {
 
 
 //Rota para listagem de usuarios
-app.get('/clientes', async (req, res) => {
+app.get('/clientes', authToken, async (req, res) => {
     
     try {
 
@@ -256,7 +268,7 @@ app.get('/clientes', async (req, res) => {
 });
 
 //Puxar dados de um cliente expecifico
-app.get('/clientes/:id', async (req, res) => {
+app.get('/clientes/:id', authToken, async (req, res) => {
     
   const { id } = req.params;
   console.log("ID recebido:", id);
@@ -278,7 +290,7 @@ app.get('/clientes/:id', async (req, res) => {
 
 //Rota de edição de usuarios
 
-app.put('/editarUsuarios/:id', async (req, res) => {
+app.put('/editarUsuarios/:id', authToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { nome, email, senha, admin, origem } = req.body;
@@ -336,7 +348,7 @@ app.put('/editarUsuarios/:id', async (req, res) => {
 
 
 //Rota de deletar usuario
-app.delete('/clientes/:id', async (req, res) => {
+app.delete('/clientes/:id', authToken, async (req, res) => {
     
     try {
         
@@ -359,7 +371,7 @@ app.delete('/clientes/:id', async (req, res) => {
 
 // ---------------------------------------------------------- Rotas de produto --------------------------------------------------------
 
-app.post('/novoProduto', async (req, res) => {
+app.post('/novoProduto', authToken, async (req, res) => {
 
   try {
     
@@ -395,7 +407,7 @@ app.post('/novoProduto', async (req, res) => {
 });
 
 //Mostrar produtos
-app.get('/produtos', async (req, res) => {
+app.get('/produtos', authToken, async (req, res) => {
   try {
     const produtos = await Produto.find()
     res.json(produtos)
@@ -406,7 +418,7 @@ app.get('/produtos', async (req, res) => {
 })
 
 //Mostrar Produto especifico
-app.get('/produto/:id', async (req, res) => {
+app.get('/produto/:id', authToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -424,7 +436,7 @@ app.get('/produto/:id', async (req, res) => {
 });
 
 //Deletar produto
-app.delete('/produto/:id', async (req, res) => {
+app.delete('/produto/:id', authToken, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -446,7 +458,7 @@ app.delete('/produto/:id', async (req, res) => {
 
 
 //editar produto
-app.put('/editarProduto/:id', async (req, res) => {
+app.put('/editarProduto/:id', authToken, async (req, res) => {
 
   try {
 
@@ -482,7 +494,7 @@ app.put('/editarProduto/:id', async (req, res) => {
 // ----------------------------------------------------------------- Rotas Vendas -----------------------------------------------------------
 
 //Cadastro de nova venda
-app.post('/novaVenda', async (req, res) => {
+app.post('/novaVenda', authToken, async (req, res) => {
   try {
     const { cliente, produto, valor, vendedor, pagMetodo } = req.body;
 
@@ -504,7 +516,7 @@ app.post('/novaVenda', async (req, res) => {
 });
 
 //Listagem de vendas
-app.get('/vendas', async (req, res) => {
+app.get('/vendas', authToken, async (req, res) => {
   try {
     const vendas = await Venda.find()
     .populate('vendedor', 'nome email')
@@ -517,7 +529,7 @@ app.get('/vendas', async (req, res) => {
   }
 });
 
-app.get('/vendas/:id', async (req, res) => {
+app.get('/vendas/:id', authToken, async (req, res) => {
   
   const { id } = req.params;
   console.log("🧩 ID recebido:", id);
@@ -537,7 +549,7 @@ app.get('/vendas/:id', async (req, res) => {
 });
 
 //Rota de edição de vendas
-app.put('/vendas/:id', async (req, res) => {
+app.put('/vendas/:id', authToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { cliente, produto, valor, vendedor } = req.body;
@@ -565,7 +577,7 @@ app.put('/vendas/:id', async (req, res) => {
 });
 
 //Rota de deletar vendas
-app.delete('/vendas/:id', async (req, res) => {
+app.delete('/vendas/:id', authToken, async (req, res) => {
   try {
     const venda = await Venda.findByIdAndDelete(req.params.id);
 
@@ -584,7 +596,7 @@ app.delete('/vendas/:id', async (req, res) => {
 //-------------------------------------------------------- Dashboard -----------------------------------------------
 
 //Rota de Faturamento mensal
-app.get('/faturamento-mensal', async (req, res) => {
+app.get('/faturamento-mensal', authToken, async (req, res) => {
   try {
     const resultados = await Venda.aggregate([
       {
@@ -604,4 +616,4 @@ app.get('/faturamento-mensal', async (req, res) => {
 
 
 const PORT = 3000
-app.listen(PORT, () => console.log(`Servidor rodando na porta ${PORT}`) )
+app.listen(PORT, () => console.log(`✅ Servidor rodando na porta ${PORT}`) )
