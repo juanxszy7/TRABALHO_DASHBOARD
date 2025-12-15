@@ -59,7 +59,6 @@
               
               
               if (admin == true) {
-                  
                   console.log(`Login efetuado, id de adiministrador: ${userId}`)
                   this.$router.push("/clientes")
               }else{

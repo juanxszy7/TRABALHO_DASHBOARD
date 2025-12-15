@@ -21,13 +21,22 @@
 
           <div class="campo">
             <label>Produto:</label>
-            <input
-              type="text"
+            <select
               v-model="venda.produto"
-              placeholder="Digite o nome do produto"
+              @change="preencherValorProduto"
               required
-            />
+            >
+              <option disabled value="">Selecione um Produto</option>
+              <option
+                v-for="p in produtos"
+                :key="p._id"
+                :value="p.produto"
+              >
+                {{ p.produto }}
+              </option>
+            </select>
           </div>
+
   
           <div class="campo">
             <label>Valor (R$):</label>
@@ -37,6 +46,7 @@
               v-model="venda.valor"
               placeholder="Digite o valor"
               required
+              disabled
             />
           </div>
   
@@ -74,7 +84,7 @@
   </template>
   
   <script>
-  import api from "@/service/api"; // ajuste conforme sua estrutura
+  import api from "@/service/api";
   
   export default {
     name: "CadastroNovaVenda",
@@ -89,6 +99,7 @@
         },
         vendedores: [],
         clientes: [],
+        produtos: [],
         mensagem: "",
       };
     },
@@ -155,10 +166,29 @@
           this.mensagem = "Erro ao cadastrar venda.";
         }
       },
+      async carregarProdutos(){
+        try {
+          const res = await api.get("/produtos")
+          this.produtos = res.data
+        } catch (err) {
+          console.error("Erro ao carregar Produtos")
+        }
+  
+      },
+      preencherValorProduto() {
+        const produtoSelecionado = this.produtos.find(
+          p => p._id === this.venda.produto
+        )
+
+        if (produtoSelecionado) {
+          this.venda.valor = produtoSelecionado.valor
+        }
+    }
     },
     mounted() {
       this.carregarClientes();
       this.carregarVendedores();
+      this.carregarProdutos();
     },
   };
   </script>
